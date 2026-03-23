@@ -20,3 +20,19 @@ class Employee(models.Model):
 
     def __str__(self):
         return f"{self.last_name} {self.first_name}"
+class EmployeeImage(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='employees/')
+    order = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.employee} - {self.order}"
+import os
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+
+@receiver(post_delete, sender=EmployeeImage)
+def delete_image(sender, instance, **kwargs):
+    if instance.image:
+        if os.path.isfile(instance.image.path):
+            os.remove(instance.image.path)
