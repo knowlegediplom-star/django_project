@@ -32,3 +32,8 @@
 {% endfor %}
 
 {% endblock %}
+
+# 🟡 смотритель (staff)
+if request.user.is_staff:
+    if request.method == "PUT":
+        return JsonResponse({"message": "watcher can move employees"})

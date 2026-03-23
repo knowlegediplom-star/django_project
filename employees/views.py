@@ -1,57 +1,74 @@
-from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.utils.timezone import now
+import json
+from django.http import JsonResponse
 from django.core.paginator import Paginator
-
+from django.views.decorators.csrf import csrf_exempt
 from .models import Employee
+from .serializers import employee_to_dict
 
 
-def home(request):
-    employees = Employee.objects.prefetch_related("skills", "images")
-
-    last_employees = employees.order_by("-hire_date")[:4]
-    count = employees.count()
-
-    return render(
-        request,
-        "home.html",
-        {
-            "employees": last_employees,  # ← показываем только 4 последних
-            "count": count,
-        },
-    )
-
-
+@csrf_exempt
 def employee_list(request):
-    employees = Employee.objects.prefetch_related("skills", "images")
+    if request.method == "GET":
+        employees = Employee.objects.all()
 
-    paginator = Paginator(employees, 10)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+        # фильтр
+        skill = request.GET.get("skill")
+        if skill:
+            employees = employees.filter(skills__name__icontains=skill)
 
-    return render(request, "employee_list.html", {"page_obj": page_obj})
+        # пагинация
+        paginator = Paginator(employees, 10)
+        page = request.GET.get("page", 1)
+        page_obj = paginator.get_page(page)
+
+        data = [employee_to_dict(e) for e in page_obj]
+
+        return JsonResponse({
+            "count": paginator.count,
+            "page": int(page),
+            "results": data
+        })
+
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            return JsonResponse({"detail": "Authentication required"}, status=403)
+
+        data = json.loads(request.body)
+
+        employee = Employee.objects.create(
+            first_name=data.get("first_name"),
+            last_name=data.get("last_name"),
+            skill_level=data.get("skill_level", 1),
+            description=data.get("description", "")
+        )
+
+        return JsonResponse(employee_to_dict(employee), status=201)
 
 
-@login_required
-def employee_detail(request, pk):
-    employee = get_object_or_404(
-        Employee.objects.prefetch_related("skills", "images"), pk=pk
-    )
+@csrf_exempt
+def employee_detail(request, id):
+    employee = Employee.objects.filter(id=id).first()
 
-    days_worked = 0
-    if employee.hire_date:
-        days_worked = (now().date() - employee.hire_date).days
+    if not employee:
+        return JsonResponse({"detail": "Not found"}, status=404)
 
-    images = employee.images.all().order_by("order")
-    first_image = images.first()
+    if request.method == "GET":
+        return JsonResponse(employee_to_dict(employee))
 
-    return render(
-        request,
-        "employee_detail.html",
-        {
-            "employee": employee,
-            "days_worked": days_worked,
-            "first_image": first_image,
-            "images": images[1:],  # галерея без первого фото
-        },
-    )
+    if not request.user.is_authenticated:
+        return JsonResponse({"detail": "Authentication required"}, status=403)
+
+    if request.method == "PUT":
+        data = json.loads(request.body)
+
+        employee.first_name = data.get("first_name", employee.first_name)
+        employee.last_name = data.get("last_name", employee.last_name)
+        employee.skill_level = data.get("skill_level", employee.skill_level)
+        employee.description = data.get("description", employee.description)
+
+        employee.save()
+        return JsonResponse(employee_to_dict(employee))
+
+    if request.method == "DELETE":
+        employee.delete()
+        return JsonResponse({"detail": "Deleted"}, status=204)

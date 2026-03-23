@@ -38,3 +38,16 @@
 </div>
 
 {% endblock %}
+    if request.method == "POST":
+        if not request.user.is_superuser:
+            return JsonResponse({"error": "no access"}, status=403)
+
+        data = json.loads(request.body)
+
+        employee = Employee.objects.create(
+            first_name=data.get("first_name"),
+            last_name=data.get("last_name"),
+            skill_level=data.get("skill_level", 1),
+        )
+
+        return JsonResponse({"message": "created", "id": employee.id})
