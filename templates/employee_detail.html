@@ -1,13 +1,34 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <h2>{{ employee.first_name }} {{ employee.last_name }}</h2>
 
-<p>Навыки:</p>
+<p><strong>Отчество:</strong> {{ employee.middle_name }}</p>
+
+<p><strong>Стаж:</strong> {{ days_worked }} дней</p>
+
+<h3>Навыки:</h3>
 <ul>
     {% for skill in employee.skills.all %}
-        <li>{{ skill.name }}</li>
+        <li>{{ skill.name }} (уровень {{ employee.skill_level }})</li>
+    {% empty %}
+        <li>Навыки не указаны</li>
     {% endfor %}
 </ul>
+
+<h3>Главное фото:</h3>
+{% if first_image %}
+    <img src="{{ first_image.image.url }}" width="200">
+{% else %}
+    <p>Нет фото</p>
+{% endif %}
+
+<h3>Галерея:</h3>
+{% for img in images %}
+    <img src="{{ img.image.url }}" width="150">
+{% empty %}
+    <p>Нет дополнительных фото</p>
+{% endfor %}
 
 {% endblock %}

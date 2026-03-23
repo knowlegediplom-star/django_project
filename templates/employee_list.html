@@ -1,14 +1,40 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <h2>Список сотрудников</h2>
 
-{% for emp in employees %}
+{% for emp in page_obj %}
     <div>
-        <a href="{% url 'employee_detail' emp.id %}">
-            {{ emp.first_name }} {{ emp.last_name }}
-        </a>
+        <h3>
+            <a href="{% url 'employee_detail' emp.id %}">
+                {{ emp.first_name }} {{ emp.last_name }}
+            </a>
+        </h3>
+
+        <p>Навыки:</p>
+        <ul>
+            {% for skill in emp.skills.all %}
+                <li>{{ skill.name }}</li>
+            {% empty %}
+                <li>Навыки не указаны</li>
+            {% endfor %}
+        </ul>
     </div>
+    <hr>
 {% endfor %}
+
+<!--  КНОПКИ ПАГИНАЦИИ -->
+<div>
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">Назад</a>
+    {% endif %}
+
+    <span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Вперёд</a>
+    {% endif %}
+</div>
 
 {% endblock %}
