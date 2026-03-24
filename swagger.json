@@ -1,0 +1,28 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Employees API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/employees/": {
+      "get": {
+        "summary": "Список сотрудников"
+      },
+      "post": {
+        "summary": "Создать сотрудника"
+      }
+    },
+    "/employees/{id}/": {
+      "get": {
+        "summary": "Детали сотрудника"
+      },
+      "put": {
+        "summary": "Обновить сотрудника"
+      },
+      "delete": {
+        "summary": "Удалить сотрудника"
+      }
+    }
+  }
+}
